@@ -558,6 +558,7 @@ Item {
 
           // Right: File Detail / Preview Card
           Rectangle {
+            id: previewCard
             width: parent.width * 0.42 - Style.space(12) - Style.normalBorderWidth
             height: parent.height
             radius: root.cornerRadius
@@ -579,7 +580,7 @@ Item {
                 spacing: Style.space(12)
 
                 Text {
-                  text: parent.parent.activeFile ? parent.parent.activeFile.icon : "󰈔"
+                  text: previewCard.activeFile ? previewCard.activeFile.icon : "󰈔"
                   color: root.foreground
                   font.family: root.fontFamily
                   font.pixelSize: Style.space(36)
@@ -592,7 +593,7 @@ Item {
 
                   Text {
                     width: parent.width
-                    text: parent.parent.parent.activeFile ? parent.parent.parent.activeFile.name : "Select a file"
+                    text: previewCard.activeFile ? previewCard.activeFile.name : "Select a file"
                     color: root.foreground
                     font.family: root.fontFamily
                     font.pixelSize: Style.font.heading
@@ -603,7 +604,7 @@ Item {
                   }
 
                   Text {
-                    text: parent.parent.parent.activeFile ? parent.parent.parent.activeFile.category.toUpperCase() : ""
+                    text: previewCard.activeFile ? previewCard.activeFile.category.toUpperCase() : ""
                     color: root.selectedBackground
                     font.family: root.fontFamily
                     font.pixelSize: Style.font.caption
@@ -614,7 +615,7 @@ Item {
 
               // Live Image Thumbnail Preview (if image category)
               Rectangle {
-                visible: parent.parent.activeFile !== null && parent.parent.activeFile.category === "images"
+                visible: previewCard.activeFile !== null && previewCard.activeFile.category === "images"
                 Layout.fillWidth: true
                 Layout.preferredHeight: Style.space(110)
                 radius: root.cornerRadius
@@ -626,7 +627,7 @@ Item {
                 Image {
                   anchors.fill: parent
                   anchors.margins: Style.space(4)
-                  source: (parent.parent.parent.activeFile && parent.parent.parent.activeFile.category === "images") ? Util.fileUrl(parent.parent.parent.activeFile.path) : ""
+                  source: (previewCard.activeFile && previewCard.activeFile.category === "images") ? Util.fileUrl(previewCard.activeFile.path) : ""
                   fillMode: Image.PreserveAspectFit
                   asynchronous: true
                   smooth: true
@@ -656,7 +657,7 @@ Item {
                     Layout.preferredWidth: Style.space(70)
                   }
                   Text {
-                    text: parent.parent.parent.activeFile ? parent.parent.parent.activeFile.sizeFormatted : "-"
+                    text: previewCard.activeFile ? previewCard.activeFile.sizeFormatted : "-"
                     color: root.foreground
                     font.family: root.fontFamily
                     font.pixelSize: Style.font.body
@@ -675,7 +676,7 @@ Item {
                     Layout.preferredWidth: Style.space(70)
                   }
                   Text {
-                    text: parent.parent.parent.activeFile ? parent.parent.parent.activeFile.mtimeFormatted : "-"
+                    text: previewCard.activeFile ? previewCard.activeFile.mtimeFormatted : "-"
                     color: root.foreground
                     font.family: root.fontFamily
                     font.pixelSize: Style.font.body
@@ -695,7 +696,7 @@ Item {
                   }
                   Text {
                     width: parent.width
-                    text: parent.parent.parent.activeFile ? parent.parent.parent.activeFile.path : "-"
+                    text: previewCard.activeFile ? previewCard.activeFile.path : "-"
                     color: root.foreground
                     font.family: root.fontFamily
                     font.pixelSize: Style.font.caption

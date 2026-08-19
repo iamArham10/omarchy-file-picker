@@ -35,7 +35,7 @@ Options:
 Keybindings in TUI mode:
   Enter             Open file in default application
   Alt+Enter         Open containing directory
-  Shift+Enter       Copy file path to clipboard
+  Ctrl+Y            Copy file path to clipboard
   Ctrl+R            Rebuild cache and refresh list
 
 Configuration:
@@ -67,92 +67,73 @@ launch_tui() {
     scan_args+=("--category" "$category")
   fi
 
-  local fzf_colors="bg:#1c1c1c,fg:#d4d4d4,hl:#7aa2f7,hl+:#7aa2f7,bg+:#313131,fg+:#ffffff,border:#505050,prompt:#7aa2f7,pointer:#7aa2f7,info:#9ece6a"
-
   # Populate cache
   bash "$SCAN_SCRIPT" "${scan_args[@]}" >/dev/null 2>&1 || true
 
-  local preview_cmd='
-    f={1}
-    case "$f" in
-      *.pdf)
-        if command -v pdftotext >/dev/null 2>&1; then
-          pdftotext "$f" - 2>/dev/null | head -40
-        else
-          file "$f"
-        fi
-        ;;
-      *.png|*.jpg|*.jpeg|*.webp|*.gif|*.svg|*.bmp|*.avif|*.ico|*.tiff)
-        echo "🖼️ Image: $(basename "$f")"
-        if command -v chafa >/dev/null 2>&1; then
-          chafa -f symbols --size 50x12 "$f" 2>/dev/null
-        else
-          file "$f"
-          stat -c "Size: %s bytes | Modified: %y" "$f" 2>/dev/null || true
-        fi
-        ;;
-      *.mp4|*.mkv|*.avi|*.mov|*.webm|*.flv|*.wmv|*.3gp)
-        echo "🎬 Video: $(basename "$f")"
-        if command -v ffprobe >/dev/null 2>&1; then
-          ffprobe -v quiet -show_entries format=duration,size,bit_rate -of default=noprint_wrappers=1 "$f" 2>/dev/null
-        else
-          file "$f"
-        fi
-        ;;
-      *.mp3|*.flac|*.ogg|*.wav|*.m4a|*.aac|*.opus)
-        echo "🎵 Audio: $(basename "$f")"
-        if command -v ffprobe >/dev/null 2>&1; then
-          ffprobe -v quiet -show_entries format_tags=artist,title,album,date -of default=noprint_wrappers=1 "$f" 2>/dev/null
-        else
-          file "$f"
-        fi
-        ;;
-      *.md|*.txt|*.org|*.rst|*.adoc)
-        if command -v bat >/dev/null 2>&1; then
-          bat --style=plain --color=always --line-range :40 "$f" 2>/dev/null
-        else
-          head -40 "$f"
-        fi
-        ;;
-      *.py|*.rs|*.go|*.js|*.ts|*.jsx|*.tsx|*.c|*.cpp|*.h|*.sh|*.lua|*.json|*.toml|*.yaml|*.yml)
-        if command -v bat >/dev/null 2>&1; then
-          bat --style=numbers --color=always --line-range :40 "$f" 2>/dev/null
-        else
-          head -40 "$f"
-        fi
-        ;;
-      *)
-        file "$f"
-        ;;
-    esac
-  '
-
+  # Feed only file paths to fzf (first TSV column) — this way {} works exactly
+  # like the original fuzzel-search.sh and preview commands are reliable.
   local selected
-  selected=$(bash "$SCAN_SCRIPT" "${scan_args[@]}" | fzf \
-    --delimiter=$'\t' \
-    --with-nth=1 \
-    --prompt " Files › " \
+  selected=$(bash "$SCAN_SCRIPT" "${scan_args[@]}" | cut -f1 | fzf \
+    --prompt "› " \
     --border rounded \
-    --color "$fzf_colors" \
-    --preview "$preview_cmd" \
-    --preview-window=down:11:wrap \
+    --color "bg:#1c1c1c,fg:#d4d4d4,hl:#7aa2f7,hl+:#7aa2f7,bg+:#313131,fg+:#ffffff,border:#505050,prompt:#7aa2f7,pointer:#7aa2f7,info:#9ece6a" \
+    --preview '
+        f={}
+        case "$f" in
+            *.pdf)
+                pdftotext "$f" - 2>/dev/null | head -40 ;;
+            *.png|*.jpg|*.jpeg|*.webp|*.gif|*.svg|*.bmp|*.avif|*.ico|*.tiff)
+                echo "🖼️ $(basename "$f")"
+                echo ""
+                file "$f" 2>/dev/null
+                echo ""
+                stat -c "Size:     %s bytes" "$f" 2>/dev/null
+                stat -c "Modified: %y" "$f" 2>/dev/null
+                echo ""
+                if command -v chafa >/dev/null 2>&1; then
+                    chafa -f symbols --size 50x12 "$f" 2>/dev/null
+                elif command -v identify >/dev/null 2>&1; then
+                    identify "$f" 2>/dev/null
+                fi ;;
+            *.mp4|*.mkv|*.avi|*.mov|*.webm|*.flv|*.wmv|*.3gp)
+                echo "🎬 $(basename "$f")"
+                ffprobe -v quiet -show_entries format=duration,size,bit_rate \
+                    -of default=noprint_wrappers=1 "$f" 2>/dev/null ;;
+            *.mp3|*.flac|*.ogg|*.wav|*.m4a|*.aac|*.opus)
+                echo "🎵 $(basename "$f")"
+                ffprobe -v quiet -show_entries format_tags=artist,title,album \
+                    -of default=noprint_wrappers=1 "$f" 2>/dev/null ;;
+            *.md|*.txt|*.org|*.rst|*.adoc)
+                if command -v bat >/dev/null 2>&1; then
+                    bat --style=plain --color=always --line-range :40 "$f" 2>/dev/null
+                else
+                    head -40 "$f"
+                fi ;;
+            *.py|*.rs|*.go|*.js|*.ts|*.jsx|*.tsx|*.c|*.cpp|*.h|*.hpp|*.sh|*.lua|*.json|*.toml|*.yaml|*.yml)
+                if command -v bat >/dev/null 2>&1; then
+                    bat --style=numbers --color=always --line-range :40 "$f" 2>/dev/null
+                else
+                    head -40 "$f"
+                fi ;;
+            *)
+                file "$f" ;;
+        esac
+    ' \
+    --preview-window=down:10:wrap \
     --height=100% \
     --layout=reverse \
     --info=inline \
-    --bind "ctrl-r:reload(bash '$SCAN_SCRIPT' --force ${scan_args[*]})" \
-    --bind "alt-enter:execute(xdg-open \$(dirname {1}) &)+abort" \
-    --bind "ctrl-y:execute(echo -n {1} | wl-copy)+abort" \
+    --bind "ctrl-r:reload(bash '$SCAN_SCRIPT' --force ${scan_args[*]} | cut -f1)" \
+    --bind "alt-enter:execute(xdg-open \$(dirname {}) &)+abort" \
+    --bind "ctrl-y:execute(echo -n {} | wl-copy)+abort" \
     --header "Enter: Open | Alt+Enter: Folder | Ctrl+Y: Copy | Ctrl+R: Refresh" \
   || true)
 
   [[ -z "$selected" ]] && exit 0
 
-  local file_path
-  file_path=$(echo "$selected" | awk -F'\t' '{print $1}')
-
-  if [[ -n "$file_path" && -e "$file_path" ]]; then
-    setsid xdg-open "$file_path" >/dev/null 2>&1 &
-    sleep 0.2
+  if [[ -e "$selected" ]]; then
+    setsid xdg-open "$selected" &>/dev/null &
+    sleep 1
   fi
 }
 
@@ -161,7 +142,7 @@ toggle_overlay() {
   local payload="{\"category\":\"$category\"}"
 
   if command -v omarchy-shell >/dev/null 2>&1; then
-    if omarchy-shell -q shell toggle arh.file-picker "$payload" 2>/dev/null; then
+    if omarchy-shell shell toggle arh.file-picker "$payload" 2>/dev/null; then
       exit 0
     fi
   fi
