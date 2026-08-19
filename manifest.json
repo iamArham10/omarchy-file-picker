@@ -6,6 +6,7 @@
   "author": "iamArham10",
   "license": "MIT",
   "description": "Fuzzy file selector and launcher for documents, media, markdown notes, and code",
+  "preview": "preview.png",
   "kinds": [
     "overlay"
   ],

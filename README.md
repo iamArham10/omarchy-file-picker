@@ -6,6 +6,12 @@ Quickly find and open documents, notes, videos, audio, images, and code files fr
 
 ---
 
+<p align="center">
+  <img src="preview.png" alt="Omarchy File Picker Preview" width="850" />
+</p>
+
+---
+
 ## ✨ Features
 
 - ⚡ **Lightning Fast Scanning**: Uses `fd` (with fallback to `find`) for sub-50ms directory indexing with background caching.
