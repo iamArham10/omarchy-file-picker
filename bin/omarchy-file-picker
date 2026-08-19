@@ -77,7 +77,15 @@ launch_tui() {
           file "$f"
         fi
         ;;
-      mp4|mkv|avi|mov|webm|flv|wmv)
+      png|jpg|jpeg|webp|gif|svg|bmp|avif|ico|tiff)
+        echo "🖼️ Image: $(basename "$f")"
+        if command -v chafa >/dev/null 2>&1; then
+          chafa -f symbols --size 40x15 "$f" 2>/dev/null
+        else
+          file "$f"
+        fi
+        ;;
+      mp4|mkv|avi|mov|webm|flv|wmv|3gp)
         echo "🎬 Video: $(basename "$f")"
         if command -v ffprobe >/dev/null 2>&1; then
           ffprobe -v quiet -show_entries format=duration,size,bit_rate -of default=noprint_wrappers=1 "$f" 2>/dev/null

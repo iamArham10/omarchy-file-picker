@@ -571,7 +571,7 @@ Item {
             ColumnLayout {
               anchors.fill: parent
               anchors.margins: Style.space(16)
-              spacing: Style.space(12)
+              spacing: Style.space(10)
 
               // Large Icon & Name
               RowLayout {
@@ -612,10 +612,31 @@ Item {
                 }
               }
 
+              // Live Image Thumbnail Preview (if image category)
+              Rectangle {
+                visible: parent.parent.activeFile !== null && parent.parent.activeFile.category === "images"
+                Layout.fillWidth: true
+                Layout.preferredHeight: Style.space(110)
+                radius: root.cornerRadius
+                color: Util.alpha(root.foreground, 0.04)
+                border.width: Style.normalBorderWidth
+                border.color: Util.alpha(root.border, 0.2)
+                clip: true
+
+                Image {
+                  anchors.fill: parent
+                  anchors.margins: Style.space(4)
+                  source: (parent.parent.parent.activeFile && parent.parent.parent.activeFile.category === "images") ? Util.fileUrl(parent.parent.parent.activeFile.path) : ""
+                  fillMode: Image.PreserveAspectFit
+                  asynchronous: true
+                  smooth: true
+                }
+              }
+
               // Metadata Properties
               Column {
                 Layout.fillWidth: true
-                spacing: Style.space(8)
+                spacing: Style.space(6)
 
                 Rectangle {
                   width: parent.width
@@ -679,7 +700,7 @@ Item {
                     font.family: root.fontFamily
                     font.pixelSize: Style.font.caption
                     wrapMode: Text.WrapAnywhere
-                    maximumLineCount: 3
+                    maximumLineCount: 2
                     opacity: 0.85
                   }
                 }
