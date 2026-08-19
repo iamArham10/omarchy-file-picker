@@ -1,0 +1,14 @@
+# Cache and temporary files
+*.cache
+*.tmp
+*.tmp.*
+.cache/
+__pycache__/
+
+# OS and editor files
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

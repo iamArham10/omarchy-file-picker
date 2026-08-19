@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "arh.file-picker",
+  "name": "File Picker",
+  "version": "1.0.0",
+  "author": "iamArham10",
+  "license": "MIT",
+  "description": "Fuzzy file selector and launcher for documents, media, markdown notes, and code",
+  "kinds": [
+    "overlay"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "overlay": "FilePicker.qml"
+  }
+}

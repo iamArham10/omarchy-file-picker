@@ -1,0 +1,208 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Omarchy File Picker - CLI and Launcher
+# ==============================================================================
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SCAN_SCRIPT="$SCRIPT_DIR/scan.sh"
+CONFIG_FILE="${OMARCHY_FILE_PICKER_CONFIG:-$HOME/.config/omarchy/file-picker.json}"
+
+print_help() {
+  cat << 'USAGE'
+Omarchy File Picker - Lightning-fast fuzzy file search & launcher
+
+Usage:
+  omarchy-file-picker [options]
+
+Options:
+  --overlay, -o     Toggle Omarchy GUI overlay (default if Omarchy Shell is running)
+  --tui, --fzf, -t  Open terminal interactive fuzzy picker with live previews
+  --refresh, -r     Force re-index / refresh file cache
+  --config, -c      Open configuration file in $EDITOR
+  --category <cat>  Pre-filter by category (documents, notes, videos, audio, images, code)
+  --help, -h        Show this help message
+
+Keybindings in TUI mode:
+  Enter             Open file in default application
+  Alt+Enter         Open containing directory
+  Shift+Enter       Copy file path to clipboard
+  Ctrl+R            Rebuild cache and refresh list
+
+Configuration:
+  Edit ~/.config/omarchy/file-picker.json to add custom folders, extensions, and exclusions.
+USAGE
+}
+
+open_config() {
+  if [[ ! -f "$CONFIG_FILE" && -f "$SCRIPT_DIR/default-config.json" ]]; then
+    mkdir -p "$(dirname "$CONFIG_FILE")"
+    cp "$SCRIPT_DIR/default-config.json" "$CONFIG_FILE"
+  fi
+
+  local editor="${EDITOR:-${VISUAL:-nvim}}"
+  if command -v "$editor" >/dev/null 2>&1; then
+    exec "$editor" "$CONFIG_FILE"
+  elif command -v nano >/dev/null 2>&1; then
+    exec nano "$CONFIG_FILE"
+  else
+    exec xdg-open "$CONFIG_FILE"
+  fi
+}
+
+launch_tui() {
+  local category="${1:-}"
+
+  local scan_args=("--tsv")
+  if [[ -n "$category" ]]; then
+    scan_args+=("--category" "$category")
+  fi
+
+  local fzf_colors="bg:#1c1c1c,fg:#d4d4d4,hl:#7aa2f7,hl+:#7aa2f7,bg+:#313131,fg+:#ffffff,border:#505050,prompt:#7aa2f7,pointer:#7aa2f7,info:#9ece6a"
+
+  # Run scanner to populate cache
+  bash "$SCAN_SCRIPT" "${scan_args[@]}" >/dev/null 2>&1 || true
+
+  local preview_cmd='
+    f=$(echo {} | awk -F"\t" "{print \$1}")
+    cat=$(echo {} | awk -F"\t" "{print \$2}")
+    ext=$(echo {} | awk -F"\t" "{print \$3}")
+
+    case "$ext" in
+      pdf)
+        if command -v pdftotext >/dev/null 2>&1; then
+          pdftotext "$f" - 2>/dev/null | head -45
+        else
+          file "$f"
+        fi
+        ;;
+      mp4|mkv|avi|mov|webm|flv|wmv)
+        echo "🎬 Video: $(basename "$f")"
+        if command -v ffprobe >/dev/null 2>&1; then
+          ffprobe -v quiet -show_entries format=duration,size,bit_rate -of default=noprint_wrappers=1 "$f" 2>/dev/null
+        fi
+        ;;
+      mp3|flac|ogg|wav|m4a|aac|opus)
+        echo "🎵 Audio: $(basename "$f")"
+        if command -v ffprobe >/dev/null 2>&1; then
+          ffprobe -v quiet -show_entries format_tags=artist,title,album,date -of default=noprint_wrappers=1 "$f" 2>/dev/null
+        fi
+        ;;
+      md|markdown|org|txt|rst|adoc)
+        if command -v bat >/dev/null 2>&1; then
+          bat --style=plain --color=always --line-range :50 "$f" 2>/dev/null
+        else
+          head -50 "$f"
+        fi
+        ;;
+      py|rs|go|js|ts|jsx|tsx|c|cpp|h|sh|lua|json|toml|yaml|yml)
+        if command -v bat >/dev/null 2>&1; then
+          bat --style=numbers --color=always --line-range :50 "$f" 2>/dev/null
+        else
+          head -50 "$f"
+        fi
+        ;;
+      *)
+        file "$f"
+        ;;
+    esac
+  '
+
+  local selected
+  selected=$(bash "$SCAN_SCRIPT" "${scan_args[@]}" | fzf \
+    --delimiter=$'\t' \
+    --with-nth=1 \
+    --prompt " Files › " \
+    --border rounded \
+    --color "$fzf_colors" \
+    --preview "$preview_cmd" \
+    --preview-window=down:12:wrap \
+    --height=100% \
+    --layout=reverse \
+    --info=inline \
+    --bind "ctrl-r:reload(bash '$SCAN_SCRIPT' --force ${scan_args[*]})" \
+    --bind "alt-enter:execute(xdg-open \$(dirname \$(echo {} | awk -F'\t' '{print \$1}')) &)+abort" \
+    --bind "shift-enter:execute(echo -n \$(echo {} | awk -F'\t' '{print \$1}') | wl-copy)+abort" \
+    --header "Enter: Open | Alt+Enter: Folder | Shift+Enter: Copy | Ctrl+R: Refresh" \
+  || true)
+
+  [[ -z "$selected" ]] && exit 0
+
+  local file_path
+  file_path=$(echo "$selected" | awk -F'\t' '{print $1}')
+
+  if [[ -n "$file_path" && -e "$file_path" ]]; then
+    setsid xdg-open "$file_path" >/dev/null 2>&1 &
+    sleep 0.2
+  fi
+}
+
+toggle_overlay() {
+  local category="${1:-all}"
+  local payload="{\"category\":\"$category\"}"
+
+  if command -v omarchy-shell >/dev/null 2>&1; then
+    if omarchy-shell -q shell toggle arh.file-picker "$payload" 2>/dev/null; then
+      exit 0
+    fi
+  fi
+
+  # Fallback to TUI if shell is not running
+  launch_tui "$category"
+}
+
+# ------------------------------------------------------------- CLI Dispatch
+MODE="auto"
+TARGET_CATEGORY=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --overlay|-o)
+      MODE="overlay"
+      shift
+      ;;
+    --tui|--fzf|-t)
+      MODE="tui"
+      shift
+      ;;
+    --refresh|-r)
+      echo "Re-indexing files..."
+      bash "$SCAN_SCRIPT" --force >/dev/null
+      echo "Cache refreshed successfully."
+      exit 0
+      ;;
+    --config|-c)
+      open_config
+      exit 0
+      ;;
+    --category)
+      TARGET_CATEGORY="$2"
+      shift 2
+      ;;
+    --help|-h)
+      print_help
+      exit 0
+      ;;
+    *)
+      TARGET_CATEGORY="$1"
+      shift
+      ;;
+  esac
+done
+
+case "$MODE" in
+  overlay)
+    toggle_overlay "$TARGET_CATEGORY"
+    ;;
+  tui)
+    launch_tui "$TARGET_CATEGORY"
+    ;;
+  auto)
+    if [[ -t 0 && -t 1 && -z "${WAYLAND_DISPLAY:-}" ]]; then
+      launch_tui "$TARGET_CATEGORY"
+    else
+      toggle_overlay "$TARGET_CATEGORY"
+    fi
+    ;;
+esac
