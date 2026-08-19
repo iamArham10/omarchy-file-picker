@@ -17,6 +17,7 @@ Quickly find and open documents, notes, videos, audio, images, and code files fr
 - ⚡ **Lightning Fast Scanning**: Uses `fd` (with fallback to `find`) for sub-50ms directory indexing with background caching.
 - 🗂️ **Configurable Directories & File Types**: Simple JSON configuration (`~/.config/omarchy/file-picker.json`) to add/remove search folders, categories, and exclusions.
 - 🎨 **Native Omarchy Shell UI**: Seamlessly inherits active Omarchy themes, border radius, fonts, colors, and shadows.
+- 🖼️ **Live Image Preview**: Displays image thumbnails directly inside the preview card when browsing image files.
 - 🏷️ **Category Filtering**: Instant category pills for **All**, **Docs** (PDF, DOCX, CSV), **Notes** (Markdown, Org), **Videos** (MP4, MKV), **Audio** (MP3, FLAC), **Images** (PNG, JPG, WebP), and **Code** (Rust, Python, Go, JS/TS, Lua, etc.).
 - ⌨️ **Dual Mode Support**:
   - **Native GUI Overlay**: Floating Quickshell layer overlay with live search and metadata preview.
@@ -27,18 +28,10 @@ Quickly find and open documents, notes, videos, audio, images, and code files fr
 
 ## 📦 Installation
 
-### Method 1: Using the Omarchy CLI (Recommended)
+Install and enable the plugin directly with the Omarchy CLI:
 
 ```bash
 omarchy plugin add https://github.com/iamArham10/omarchy-file-picker.git --enable
-```
-
-### Method 2: Manual Clone & Setup
-
-```bash
-git clone https://github.com/iamArham10/omarchy-file-picker.git ~/.config/omarchy/plugins/arh.file-picker
-cd ~/.config/omarchy/plugins/arh.file-picker
-./install.sh
 ```
 
 ---
@@ -173,6 +166,14 @@ omarchy-file-picker --config
 | `Tab` / `Shift + Tab` | Cycle category filter pills |
 | `F5` or `Ctrl + R` | Force refresh cache |
 | `Esc` | Clear search query or close picker |
+
+---
+
+## 🔒 Security & Scope
+
+- **Local Execution Only**: No network requests, telemetry, or external API calls.
+- **Sandboxed Caching**: File metadata cache is stored strictly in user space (`~/.cache/omarchy/file-picker/`).
+- **Standard Desktop Integration**: Uses standard `xdg-open` to launch user-selected files in their chosen system apps.
 
 ---
 
