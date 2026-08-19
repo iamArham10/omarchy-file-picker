@@ -141,8 +141,8 @@ launch_tui() {
     --info=inline \
     --bind "ctrl-r:reload(bash '$SCAN_SCRIPT' --force ${scan_args[*]})" \
     --bind "alt-enter:execute(xdg-open \$(dirname {1}) &)+abort" \
-    --bind "shift-enter:execute(echo -n {1} | wl-copy)+abort" \
-    --header "Enter: Open | Alt+Enter: Folder | Shift+Enter: Copy | Ctrl+R: Refresh" \
+    --bind "ctrl-y:execute(echo -n {1} | wl-copy)+abort" \
+    --header "Enter: Open | Alt+Enter: Folder | Ctrl+Y: Copy | Ctrl+R: Refresh" \
   || true)
 
   [[ -z "$selected" ]] && exit 0
