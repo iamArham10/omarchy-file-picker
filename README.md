@@ -1,13 +1,17 @@
 # 🔍 Omarchy File Picker (`arh.file-picker`)
 
-A high-performance, theme-aware fuzzy file search plugin and launcher for **[Omarchy](https://omarchy.org/)** and **Hyprland**.
+A high-performance fuzzy file search and launcher plugin for **[Omarchy](https://omarchy.org/)** and **Hyprland**.
 
-Quickly find and open documents, notes, videos, audio, images, and code files from your configured directories using either a **native Quickshell overlay** or an **interactive terminal TUI**.
+Quickly find and open documents, notes, videos, audio, images, and code files from your configured directories using an **interactive terminal TUI** powered by `fzf`.
 
 ---
 
 <p align="center">
-  <img src="preview.png" alt="Omarchy File Picker Preview" width="850" />
+  <img src="assets/filePicker.png" alt="Omarchy File Picker — File Search" width="850" />
+</p>
+
+<p align="center">
+  <img src="assets/filePicker2.png" alt="Omarchy File Picker — Image & Video Preview" width="850" />
 </p>
 
 ---
@@ -16,13 +20,10 @@ Quickly find and open documents, notes, videos, audio, images, and code files fr
 
 - ⚡ **Lightning Fast Scanning**: Uses `fd` (with fallback to `find`) for sub-50ms directory indexing with background caching.
 - 🗂️ **Configurable Directories & File Types**: Simple JSON configuration (`~/.config/omarchy/file-picker.json`) to add/remove search folders, categories, and exclusions.
-- 🎨 **Native Omarchy Shell UI**: Seamlessly inherits active Omarchy themes, border radius, fonts, colors, and shadows.
-- 🖼️ **Live Image Preview**: Displays image thumbnails directly inside the preview card when browsing image files.
-- 🏷️ **Category Filtering**: Instant category pills for **All**, **Docs** (PDF, DOCX, CSV), **Notes** (Markdown, Org), **Videos** (MP4, MKV), **Audio** (MP3, FLAC), **Images** (PNG, JPG, WebP), and **Code** (Rust, Python, Go, JS/TS, Lua, etc.).
-- ⌨️ **Dual Mode Support**:
-  - **Native GUI Overlay**: Floating Quickshell layer overlay with live search and metadata preview.
-  - **Terminal TUI**: Interactive `fzf` picker with rich syntax-highlighted previews (`pdftotext`, `ffprobe`, `bat`, `head`).
-- 🔗 **Action Shortcuts**: Open file (`Enter`), open folder in file manager (`Alt+Enter`), or copy file path (`Shift+Enter`).
+- 🖼️ **Image & Video Thumbnails**: Live terminal image previews via `chafa`, video frame thumbnails via `ffmpegthumbnailer`.
+- 📄 **Rich File Previews**: PDF text extraction (`pdftotext`), syntax-highlighted code/markdown (`bat`), audio/video metadata (`ffprobe`).
+- 🏷️ **Category Filtering**: Instant category pills for **All**, **Docs**, **Notes**, **Videos**, **Audio**, **Images**, and **Code**.
+- 🔗 **Action Shortcuts**: Open file (`Enter`), open folder in file manager (`Alt+Enter`), or copy file path (`Ctrl+Y`).
 
 ---
 
@@ -34,22 +35,30 @@ Install and enable the plugin directly with the Omarchy CLI:
 omarchy plugin add https://github.com/iamArham10/omarchy-file-picker.git --enable
 ```
 
+### Optional Dependencies
+
+For the best preview experience, install these packages:
+
+```bash
+sudo pacman -S chafa ffmpegthumbnailer
+```
+
+| Package | Purpose |
+|---|---|
+| `chafa` | Renders image and video thumbnails in the terminal preview |
+| `ffmpegthumbnailer` | Extracts video frame thumbnails for preview |
+| `bat` | Syntax-highlighted code and markdown previews (usually pre-installed) |
+| `pdftotext` (`poppler`) | PDF text extraction for preview |
+
 ---
 
 ## ⌨️ Hyprland Keybinding Configuration
 
 Add the keybinding to your `~/.config/hypr/bindings.lua`:
 
-### Option A: Native Omarchy GUI Overlay (`SUPER + I`)
 ```lua
--- File picker native GUI overlay
-o.bind("SUPER + I", "Fuzzy file picker", "omarchy-shell shell toggle arh.file-picker")
-```
-
-### Option B: Floating Terminal TUI with fzf (`SUPER + I`)
-```lua
--- File picker terminal fzf window
-o.bind("SUPER + I", "Fuzzy file picker", "alacritty --title fzf-picker -e omarchy-file-picker --tui")
+-- Fuzzy file picker (floating fzf window with live previews; rule in hyprland.lua)
+o.bind("SUPER + I", "Fuzzy file picker", "alacritty --title fzf-picker -e omarchy-file-picker")
 ```
 
 ---
@@ -90,41 +99,9 @@ omarchy-file-picker --config
     "code": ["py", "rs", "go", "js", "ts", "jsx", "tsx", "c", "cpp", "h", "hpp", "sh", "bash", "zsh", "lua", "json", "toml", "yaml", "yml"]
   },
   "excludeDirectories": [
-    "node_modules",
-    ".git",
-    ".svn",
-    ".hg",
-    "__pycache__",
-    ".pytest_cache",
-    ".mypy_cache",
-    ".ruff_cache",
-    ".cache",
-    ".tmp",
-    "tmp",
-    "temp",
-    "dist",
-    "build",
-    "out",
-    ".next",
-    ".nuxt",
-    ".svelte-kit",
-    ".output",
-    "vendor",
-    "venv",
-    ".venv",
-    "env",
-    ".env",
-    "target",
-    ".cargo",
-    ".gradle",
-    ".m2",
-    "bin",
-    "obj",
-    ".idea",
-    ".vscode",
-    "coverage",
-    ".nyc_output",
-    "logs"
+    "node_modules", ".git", "__pycache__", ".cache", "dist", "build",
+    "out", ".next", "vendor", "venv", ".venv", "target", ".cargo",
+    ".idea", ".vscode", "coverage"
   ],
   "cacheTtlSeconds": 300,
   "maxResults": 2000
@@ -136,15 +113,12 @@ omarchy-file-picker --config
 ## 🚀 CLI Commands
 
 ```bash
-# Toggle the GUI overlay
+# Open the interactive terminal TUI (default)
 omarchy-file-picker
 
-# Launch the interactive terminal TUI
-omarchy-file-picker --tui
-
 # Pre-filter by category
-omarchy-file-picker --category notes
-omarchy-file-picker --tui --category videos
+omarchy-file-picker --category images
+omarchy-file-picker --category videos
 
 # Re-index all directories and force refresh the cache
 omarchy-file-picker --refresh
@@ -155,17 +129,16 @@ omarchy-file-picker --config
 
 ---
 
-## ⌨️ Shortcuts in Picker
+## ⌨️ Shortcuts
 
 | Key | Action |
 |---|---|
-| `↑` / `↓` or `Ctrl+K` / `Ctrl+J` | Navigate file list |
+| `↑` / `↓` | Navigate file list |
 | `Enter` | Open selected file in default app (`xdg-open`) |
 | `Alt + Enter` | Open containing directory |
-| `Shift + Enter` | Copy file path to clipboard (`wl-copy`) |
-| `Tab` / `Shift + Tab` | Cycle category filter pills |
-| `F5` or `Ctrl + R` | Force refresh cache |
-| `Esc` | Clear search query or close picker |
+| `Ctrl + Y` | Copy file path to clipboard (`wl-copy`) |
+| `Ctrl + R` | Force refresh cache |
+| `Esc` | Close picker |
 
 ---
 
