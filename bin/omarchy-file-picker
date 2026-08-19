@@ -25,8 +25,8 @@ Usage:
   omarchy-file-picker [options]
 
 Options:
-  --overlay, -o     Toggle Omarchy GUI overlay (default if Omarchy Shell is running)
-  --tui, --fzf, -t  Open terminal interactive fuzzy picker with live previews
+  --tui, --fzf, -t  Open terminal interactive fuzzy picker with live previews (default)
+  --overlay, -o     Toggle Omarchy GUI overlay
   --refresh, -r     Force re-index / refresh file cache
   --config, -c      Open configuration file in $EDITOR
   --category <cat>  Pre-filter by category (documents, notes, videos, audio, images, code)
@@ -69,54 +69,56 @@ launch_tui() {
 
   local fzf_colors="bg:#1c1c1c,fg:#d4d4d4,hl:#7aa2f7,hl+:#7aa2f7,bg+:#313131,fg+:#ffffff,border:#505050,prompt:#7aa2f7,pointer:#7aa2f7,info:#9ece6a"
 
-  # Run scanner to populate cache
+  # Populate cache
   bash "$SCAN_SCRIPT" "${scan_args[@]}" >/dev/null 2>&1 || true
 
   local preview_cmd='
-    f=$(echo {} | awk -F"\t" "{print \$1}")
-    cat=$(echo {} | awk -F"\t" "{print \$2}")
-    ext=$(echo {} | awk -F"\t" "{print \$3}")
-
-    case "$ext" in
-      pdf)
+    f={1}
+    case "$f" in
+      *.pdf)
         if command -v pdftotext >/dev/null 2>&1; then
-          pdftotext "$f" - 2>/dev/null | head -45
+          pdftotext "$f" - 2>/dev/null | head -40
         else
           file "$f"
         fi
         ;;
-      png|jpg|jpeg|webp|gif|svg|bmp|avif|ico|tiff)
+      *.png|*.jpg|*.jpeg|*.webp|*.gif|*.svg|*.bmp|*.avif|*.ico|*.tiff)
         echo "🖼️ Image: $(basename "$f")"
         if command -v chafa >/dev/null 2>&1; then
-          chafa -f symbols --size 40x15 "$f" 2>/dev/null
+          chafa -f symbols --size 50x12 "$f" 2>/dev/null
         else
           file "$f"
+          stat -c "Size: %s bytes | Modified: %y" "$f" 2>/dev/null || true
         fi
         ;;
-      mp4|mkv|avi|mov|webm|flv|wmv|3gp)
+      *.mp4|*.mkv|*.avi|*.mov|*.webm|*.flv|*.wmv|*.3gp)
         echo "🎬 Video: $(basename "$f")"
         if command -v ffprobe >/dev/null 2>&1; then
           ffprobe -v quiet -show_entries format=duration,size,bit_rate -of default=noprint_wrappers=1 "$f" 2>/dev/null
+        else
+          file "$f"
         fi
         ;;
-      mp3|flac|ogg|wav|m4a|aac|opus)
+      *.mp3|*.flac|*.ogg|*.wav|*.m4a|*.aac|*.opus)
         echo "🎵 Audio: $(basename "$f")"
         if command -v ffprobe >/dev/null 2>&1; then
           ffprobe -v quiet -show_entries format_tags=artist,title,album,date -of default=noprint_wrappers=1 "$f" 2>/dev/null
+        else
+          file "$f"
         fi
         ;;
-      md|markdown|org|txt|rst|adoc)
+      *.md|*.txt|*.org|*.rst|*.adoc)
         if command -v bat >/dev/null 2>&1; then
-          bat --style=plain --color=always --line-range :50 "$f" 2>/dev/null
+          bat --style=plain --color=always --line-range :40 "$f" 2>/dev/null
         else
-          head -50 "$f"
+          head -40 "$f"
         fi
         ;;
-      py|rs|go|js|ts|jsx|tsx|c|cpp|h|sh|lua|json|toml|yaml|yml)
+      *.py|*.rs|*.go|*.js|*.ts|*.jsx|*.tsx|*.c|*.cpp|*.h|*.sh|*.lua|*.json|*.toml|*.yaml|*.yml)
         if command -v bat >/dev/null 2>&1; then
-          bat --style=numbers --color=always --line-range :50 "$f" 2>/dev/null
+          bat --style=numbers --color=always --line-range :40 "$f" 2>/dev/null
         else
-          head -50 "$f"
+          head -40 "$f"
         fi
         ;;
       *)
@@ -133,13 +135,13 @@ launch_tui() {
     --border rounded \
     --color "$fzf_colors" \
     --preview "$preview_cmd" \
-    --preview-window=down:12:wrap \
+    --preview-window=down:11:wrap \
     --height=100% \
     --layout=reverse \
     --info=inline \
     --bind "ctrl-r:reload(bash '$SCAN_SCRIPT' --force ${scan_args[*]})" \
-    --bind "alt-enter:execute(xdg-open \$(dirname \$(echo {} | awk -F'\t' '{print \$1}')) &)+abort" \
-    --bind "shift-enter:execute(echo -n \$(echo {} | awk -F'\t' '{print \$1}') | wl-copy)+abort" \
+    --bind "alt-enter:execute(xdg-open \$(dirname {1}) &)+abort" \
+    --bind "shift-enter:execute(echo -n {1} | wl-copy)+abort" \
     --header "Enter: Open | Alt+Enter: Folder | Shift+Enter: Copy | Ctrl+R: Refresh" \
   || true)
 
@@ -164,12 +166,11 @@ toggle_overlay() {
     fi
   fi
 
-  # Fallback to TUI if shell is not running
   launch_tui "$category"
 }
 
 # ------------------------------------------------------------- CLI Dispatch
-MODE="auto"
+MODE="tui"
 TARGET_CATEGORY=""
 
 while [[ $# -gt 0 ]]; do
@@ -213,12 +214,5 @@ case "$MODE" in
     ;;
   tui)
     launch_tui "$TARGET_CATEGORY"
-    ;;
-  auto)
-    if [[ -t 0 && -t 1 && -z "${WAYLAND_DISPLAY:-}" ]]; then
-      launch_tui "$TARGET_CATEGORY"
-    else
-      toggle_overlay "$TARGET_CATEGORY"
-    fi
     ;;
 esac
