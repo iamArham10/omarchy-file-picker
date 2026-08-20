@@ -59,8 +59,21 @@ open_config() {
   fi
 }
 
+sanitize_category() {
+  local cat="${1:-}"
+  if [[ -n "$cat" ]]; then
+    # Strictly allow only alphanumeric, underscore, hyphen
+    if [[ ! "$cat" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+      echo "Error: Invalid category name '$cat'" >&2
+      exit 1
+    fi
+  fi
+  echo "$cat"
+}
+
 launch_tui() {
-  local category="${1:-}"
+  local category
+  category="$(sanitize_category "${1:-}")"
 
   local scan_args=("--tsv")
   if [[ -n "$category" ]]; then
@@ -70,8 +83,13 @@ launch_tui() {
   # Populate cache
   bash "$SCAN_SCRIPT" "${scan_args[@]}" >/dev/null 2>&1 || true
 
-  # Feed only file paths to fzf (first TSV column) — this way {} works exactly
-  # like the original fuzzel-search.sh and preview commands are reliable.
+  # Export sanitized category for safe fzf reload without raw interpolation
+  export OMARCHY_FP_CATEGORY="$category"
+  export OMARCHY_FP_SCAN_SCRIPT="$SCAN_SCRIPT"
+
+  local reload_cmd="bash \"\$OMARCHY_FP_SCAN_SCRIPT\" --force --tsv \${OMARCHY_FP_CATEGORY:+--category \"\$OMARCHY_FP_CATEGORY\"} | cut -f1"
+
+  # Feed only file paths to fzf
   local selected
   selected=$(bash "$SCAN_SCRIPT" "${scan_args[@]}" | cut -f1 | fzf \
     --prompt "› " \
@@ -124,7 +142,7 @@ launch_tui() {
     --height=100% \
     --layout=reverse \
     --info=inline \
-    --bind "ctrl-r:reload(bash '$SCAN_SCRIPT' --force ${scan_args[*]} | cut -f1)" \
+    --bind "ctrl-r:reload($reload_cmd)" \
     --bind "alt-enter:execute(xdg-open \$(dirname {}) &)+abort" \
     --bind "ctrl-y:execute(echo -n {} | wl-copy)+abort" \
     --header "Enter: Open | Alt+Enter: Folder | Ctrl+Y: Copy | Ctrl+R: Refresh" \
@@ -139,7 +157,8 @@ launch_tui() {
 }
 
 toggle_overlay() {
-  local category="${1:-all}"
+  local category
+  category="$(sanitize_category "${1:-all}")"
   local payload="{\"category\":\"$category\"}"
 
   if command -v omarchy-shell >/dev/null 2>&1; then
@@ -176,7 +195,7 @@ while [[ $# -gt 0 ]]; do
       exit 0
       ;;
     --category)
-      TARGET_CATEGORY="$2"
+      TARGET_CATEGORY="$(sanitize_category "$2")"
       shift 2
       ;;
     --help|-h)
@@ -184,7 +203,7 @@ while [[ $# -gt 0 ]]; do
       exit 0
       ;;
     *)
-      TARGET_CATEGORY="$1"
+      TARGET_CATEGORY="$(sanitize_category "$1")"
       shift
       ;;
   esac

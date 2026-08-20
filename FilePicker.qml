@@ -349,6 +349,7 @@ Item {
               Text {
                 anchors.verticalCenter: parent.verticalCenter
                 text: ""
+                textFormat: Text.PlainText
                 color: root.foreground
                 opacity: 0.65
                 font.family: root.fontFamily
@@ -359,6 +360,7 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 width: parent.width - Style.space(40)
                 text: root.filterText || "Type to search files…"
+                textFormat: Text.PlainText
                 color: root.foreground
                 opacity: root.filterText ? 1.0 : 0.45
                 font.family: root.fontFamily
@@ -394,6 +396,7 @@ Item {
 
                   Text {
                     text: root.categoryIcons[modelData] || "󰈔"
+                    textFormat: Text.PlainText
                     color: isActive ? root.selectedText : root.foreground
                     font.family: root.fontFamily
                     font.pixelSize: Style.font.caption
@@ -402,6 +405,7 @@ Item {
 
                   Text {
                     text: root.categoryLabels[modelData] || modelData
+                    textFormat: Text.PlainText
                     color: isActive ? root.selectedText : root.foreground
                     font.family: root.fontFamily
                     font.pixelSize: Style.font.caption
@@ -468,6 +472,7 @@ Item {
                   // File Type Icon
                   Text {
                     text: icon
+                    textFormat: Text.PlainText
                     color: isSelected ? root.selectedText : root.foreground
                     font.family: root.fontFamily
                     font.pixelSize: Style.font.title + Style.space(2)
@@ -483,6 +488,7 @@ Item {
                     Text {
                       width: parent.width
                       text: name
+                      textFormat: Text.PlainText
                       color: isSelected ? root.selectedText : root.foreground
                       font.family: root.fontFamily
                       font.pixelSize: Style.font.body
@@ -493,6 +499,7 @@ Item {
                     Text {
                       width: parent.width
                       text: dir.replace(Quickshell.env("HOME"), "~")
+                      textFormat: Text.PlainText
                       color: isSelected ? root.selectedText : root.foreground
                       font.family: root.fontFamily
                       font.pixelSize: Style.font.caption
@@ -504,6 +511,7 @@ Item {
                   // Size Badge
                   Text {
                     text: sizeFormatted
+                    textFormat: Text.PlainText
                     color: isSelected ? root.selectedText : root.foreground
                     font.family: root.fontFamily
                     font.pixelSize: Style.font.caption
@@ -531,6 +539,7 @@ Item {
               visible: displayModel.count === 0 && !root.scanning
               anchors.centerIn: parent
               text: root.filterText ? "No matching files found" : "No files indexed in configured folders"
+              textFormat: Text.PlainText
               color: root.foreground
               opacity: 0.5
               font.family: root.fontFamily
@@ -542,6 +551,7 @@ Item {
               visible: root.scanning
               anchors.centerIn: parent
               text: "󰑐 Scanning folders…"
+              textFormat: Text.PlainText
               color: root.foreground
               opacity: 0.7
               font.family: root.fontFamily
@@ -581,6 +591,7 @@ Item {
 
                 Text {
                   text: previewCard.activeFile ? previewCard.activeFile.icon : "󰈔"
+                  textFormat: Text.PlainText
                   color: root.foreground
                   font.family: root.fontFamily
                   font.pixelSize: Style.space(36)
@@ -594,6 +605,7 @@ Item {
                   Text {
                     width: parent.width
                     text: previewCard.activeFile ? previewCard.activeFile.name : "Select a file"
+                    textFormat: Text.PlainText
                     color: root.foreground
                     font.family: root.fontFamily
                     font.pixelSize: Style.font.heading
@@ -605,6 +617,7 @@ Item {
 
                   Text {
                     text: previewCard.activeFile ? previewCard.activeFile.category.toUpperCase() : ""
+                    textFormat: Text.PlainText
                     color: root.selectedBackground
                     font.family: root.fontFamily
                     font.pixelSize: Style.font.caption
@@ -650,6 +663,7 @@ Item {
                   width: parent.width
                   Text {
                     text: "Size:"
+                    textFormat: Text.PlainText
                     color: root.foreground
                     opacity: 0.6
                     font.family: root.fontFamily
@@ -658,6 +672,7 @@ Item {
                   }
                   Text {
                     text: previewCard.activeFile ? previewCard.activeFile.sizeFormatted : "-"
+                    textFormat: Text.PlainText
                     color: root.foreground
                     font.family: root.fontFamily
                     font.pixelSize: Style.font.body
@@ -669,6 +684,7 @@ Item {
                   width: parent.width
                   Text {
                     text: "Modified:"
+                    textFormat: Text.PlainText
                     color: root.foreground
                     opacity: 0.6
                     font.family: root.fontFamily
@@ -677,6 +693,7 @@ Item {
                   }
                   Text {
                     text: previewCard.activeFile ? previewCard.activeFile.mtimeFormatted : "-"
+                    textFormat: Text.PlainText
                     color: root.foreground
                     font.family: root.fontFamily
                     font.pixelSize: Style.font.body
@@ -689,6 +706,7 @@ Item {
                   spacing: Style.space(2)
                   Text {
                     text: "Location:"
+                    textFormat: Text.PlainText
                     color: root.foreground
                     opacity: 0.6
                     font.family: root.fontFamily
@@ -697,6 +715,7 @@ Item {
                   Text {
                     width: parent.width
                     text: previewCard.activeFile ? previewCard.activeFile.path : "-"
+                    textFormat: Text.PlainText
                     color: root.foreground
                     font.family: root.fontFamily
                     font.pixelSize: Style.font.caption
@@ -724,8 +743,8 @@ Item {
                   Row {
                     anchors.centerIn: parent
                     spacing: Style.space(6)
-                    Text { text: "󰅩"; color: root.selectedText; font.family: root.fontFamily; font.pixelSize: Style.font.body }
-                    Text { text: "Open File (Enter)"; color: root.selectedText; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
+                    Text { text: "󰅩"; textFormat: Text.PlainText; color: root.selectedText; font.family: root.fontFamily; font.pixelSize: Style.font.body }
+                    Text { text: "Open File (Enter)"; textFormat: Text.PlainText; color: root.selectedText; font.family: root.fontFamily; font.pixelSize: Style.font.body; font.bold: true }
                   }
 
                   MouseArea {
@@ -747,8 +766,8 @@ Item {
                   Row {
                     anchors.centerIn: parent
                     spacing: Style.space(6)
-                    Text { text: ""; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
-                    Text { text: "Open Folder (Alt+Enter)"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+                    Text { text: ""; textFormat: Text.PlainText; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+                    Text { text: "Open Folder (Alt+Enter)"; textFormat: Text.PlainText; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
                   }
 
                   MouseArea {
@@ -770,8 +789,8 @@ Item {
                   Row {
                     anchors.centerIn: parent
                     spacing: Style.space(6)
-                    Text { text: "󰅍"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
-                    Text { text: "Copy Path (Shift+Enter)"; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+                    Text { text: "󰅍"; textFormat: Text.PlainText; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
+                    Text { text: "Copy Path (Shift+Enter)"; textFormat: Text.PlainText; color: root.foreground; font.family: root.fontFamily; font.pixelSize: Style.font.caption }
                   }
 
                   MouseArea {
@@ -793,6 +812,7 @@ Item {
 
           Text {
             text: displayModel.count + " files " + (root.filterText ? "matched" : "indexed")
+            textFormat: Text.PlainText
             color: root.foreground
             opacity: 0.55
             font.family: root.fontFamily
@@ -806,6 +826,7 @@ Item {
 
             Text {
               text: "Tab: Category"
+              textFormat: Text.PlainText
               color: root.foreground
               opacity: 0.5
               font.family: root.fontFamily
@@ -813,6 +834,7 @@ Item {
             }
             Text {
               text: "F5: Refresh"
+              textFormat: Text.PlainText
               color: root.foreground
               opacity: 0.5
               font.family: root.fontFamily
@@ -820,6 +842,7 @@ Item {
             }
             Text {
               text: "Esc: Close"
+              textFormat: Text.PlainText
               color: root.foreground
               opacity: 0.5
               font.family: root.fontFamily

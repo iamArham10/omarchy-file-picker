@@ -35,6 +35,14 @@ Install and enable the plugin directly with the Omarchy CLI:
 omarchy plugin add https://github.com/iamArham10/omarchy-file-picker.git --enable
 ```
 
+### 🗑️ Uninstallation / Removal
+
+To disable and remove the plugin:
+
+```bash
+omarchy plugin remove arh.file-picker
+```
+
 ### Optional Dependencies
 
 For the best preview experience, install these packages:
