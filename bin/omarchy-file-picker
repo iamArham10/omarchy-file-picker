@@ -13,6 +13,7 @@ while [ -h "$SOURCE" ]; do
   [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
 done
 SCRIPT_DIR="$( cd -P "$( dirname "$SOURCE" )/.." >/dev/null 2>&1 && pwd )"
+SELF_BIN="$SCRIPT_DIR/bin/omarchy-file-picker"
 
 SCAN_SCRIPT="$SCRIPT_DIR/scan.sh"
 CONFIG_FILE="${OMARCHY_FILE_PICKER_CONFIG:-$HOME/.config/omarchy/file-picker.json}"
@@ -71,6 +72,18 @@ sanitize_category() {
   echo "$cat"
 }
 
+output_file_list() {
+  local force="${1:-0}"
+  local cat
+  cat="$(sanitize_category "${2:-}")"
+
+  local scan_args=("--tsv")
+  [[ "$force" -eq 1 ]] && scan_args+=("--force")
+  [[ -n "$cat" ]] && scan_args+=("--category" "$cat")
+
+  bash "$SCAN_SCRIPT" "${scan_args[@]}" | cut -f1
+}
+
 launch_tui() {
   local category
   category="$(sanitize_category "${1:-}")"
@@ -80,18 +93,20 @@ launch_tui() {
     scan_args+=("--category" "$category")
   fi
 
-  # Populate cache
+  # Populate cache initially
   bash "$SCAN_SCRIPT" "${scan_args[@]}" >/dev/null 2>&1 || true
 
-  # Export sanitized category for safe fzf reload without raw interpolation
-  export OMARCHY_FP_CATEGORY="$category"
-  export OMARCHY_FP_SCAN_SCRIPT="$SCAN_SCRIPT"
-
-  local reload_cmd="bash \"\$OMARCHY_FP_SCAN_SCRIPT\" --force --tsv \${OMARCHY_FP_CATEGORY:+--category \"\$OMARCHY_FP_CATEGORY\"} | cut -f1"
+  # Construct safe reload command without raw interpolation
+  local reload_cmd
+  if [[ -n "$category" ]]; then
+    reload_cmd="\"$SELF_BIN\" --internal-list-force $(printf '%q' "$category")"
+  else
+    reload_cmd="\"$SELF_BIN\" --internal-list-force"
+  fi
 
   # Feed only file paths to fzf
   local selected
-  selected=$(bash "$SCAN_SCRIPT" "${scan_args[@]}" | cut -f1 | fzf \
+  selected=$(output_file_list 0 "$category" | fzf \
     --prompt "› " \
     --border rounded \
     --color "bg:#1c1c1c,fg:#d4d4d4,hl:#7aa2f7,hl+:#7aa2f7,bg+:#313131,fg+:#ffffff,border:#505050,prompt:#7aa2f7,pointer:#7aa2f7,info:#9ece6a" \
@@ -176,6 +191,14 @@ TARGET_CATEGORY=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --internal-list)
+      output_file_list 0 "${2:-}"
+      exit 0
+      ;;
+    --internal-list-force)
+      output_file_list 1 "${2:-}"
+      exit 0
+      ;;
     --overlay|-o)
       MODE="overlay"
       shift
