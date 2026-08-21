@@ -811,7 +811,7 @@ Item {
           height: Style.space(22)
 
           Text {
-            text: displayModel.count + " files " + (root.filterText ? "matched" : "indexed")
+            text: root.filterText ? displayModel.count + " results shown" : root.allFiles.length + " files indexed"
             textFormat: Text.PlainText
             color: root.foreground
             opacity: 0.55

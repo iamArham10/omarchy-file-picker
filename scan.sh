@@ -71,9 +71,12 @@ USAGE
 done
 
 CACHE_TTL=300
+MAX_RESULTS=2000
 if [[ -f "$EFFECTIVE_CONFIG" ]]; then
   CACHE_TTL=$(jq -r '.cacheTtlSeconds // 300' "$EFFECTIVE_CONFIG" 2>/dev/null || echo 300)
+  MAX_RESULTS=$(jq -r '.maxResults // 2000' "$EFFECTIVE_CONFIG" 2>/dev/null || echo 2000)
 fi
+[[ "$MAX_RESULTS" =~ ^[1-9][0-9]*$ ]] || MAX_RESULTS=2000
 
 is_cache_valid() {
   [[ -f "$CACHE_FILE" && $FORCE_REFRESH -eq 0 ]] || return 1
@@ -182,6 +185,8 @@ perform_scan() {
     ' | sort -k5 -nr > "$tmp_cache"
   fi
 
+  head -n "$MAX_RESULTS" "$tmp_cache" > "$tmp_cache.limited"
+  mv "$tmp_cache.limited" "$tmp_cache"
   mv "$tmp_cache" "$CACHE_FILE"
 }
 
